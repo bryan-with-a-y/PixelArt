@@ -1,0 +1,252 @@
+"""
+The purpose of this program is to intialize a pixel art drawing project.
+The main areas that need intialized:
+    How many sections (pieces of graph paper)
+    How many pixels
+    What color set to use
+    
+    Setting up the directions folder:
+        9 sections
+        in each section there is a folder of each color
+        in each color folder there:
+        only 10x10s with color?
+"""
+
+"""
+***CONSIDERATIONS FOR NEXT PROJECT***
+2. Further subdivide graph papers to make viewing in filebrowser easier.
+3. When drawing on graph paper, write thicker lines, center numbers on 10x10 block
+4. Folder structure by region seems to work better than by color.
+7. Create code to generate instructions 100x100.
+8. Create code to generate instructions for AxB.
+9. Experiment with white as a color.
+10. Reverse the image before rounding it so that when i draw it, the bleed through effect
+    on the paper is the original image.
+11. Write code to be able to navigate an image by opening up all of the necessary directions.
+    Like, you type left and it shows you the left set of directions relative to the
+    currently being worked on AxB set.
+"""
+#1, 2, 7, 14
+#1, 2, 4, 8
+###Need to add a top level folder for block size? Maybe not.
+###Mayhaps I could, isntead of 10x10 or 20x20, do a 20x40
+
+import os
+from posixpath import join
+
+from PIL import Image
+
+from assets.objects.Palette import Palette
+import assets.constants as CONSTANTS
+
+palette_fp = "./assets/palettes/sharpie_palette.txt"
+PALETTE = Palette(palette_fp)
+
+#PROJECT LEVEL VARIABLES
+PROJECT_NAME = "coufal_present"
+PROJECT_DIR = join("./projects", PROJECT_NAME)
+BASE_IMAGE_NAME = "{}.png".format(PROJECT_NAME)
+BASE_IMAGE_PATH = join(PROJECT_DIR, "images", BASE_IMAGE_NAME)
+RESIZED_IMAGE_PATH = BASE_IMAGE_PATH[:-4] + "_resize.png"
+ROUNDED_IMAGE_PATH = BASE_IMAGE_PATH[:-4] + "_rounded.png"
+REGION_DIRECTIONS_DIR = ""
+BLOCK_PATTERN_DIRECTIONS_DIR = "./projects/{}/directions/block/".format(PROJECT_NAME)
+
+#PALETTE LEVEL VARIABLES
+INCLUDE_WHITE = False
+WHITE_COLOR_NAME = "WHITE"
+WHITE_COLOR_VALUE = (255,255,255)
+if INCLUDE_WHITE:
+    PALETTE.add_color(WHITE_COLOR_NAME, WHITE_COLOR_VALUE)
+
+#DIRECTION MAKER METHOD VARIABLES
+METHODS = ["region", "block"]
+DIRECTION_METHOD = "block"
+BLOCK_XSIZE, BLOCK_YSIZE = 20,20
+FILL_COLOR = (255,255,255)
+
+#CONSTANT VARIABLES
+DIRECTION_IM_PIXEL_THICKNESS = 50
+IMAGE_XSIZE, IMAGE_YSIZE = 420, 240
+PAPER_XSIZE, PAPER_YSIZE = 140, 80
+DIVISION_XSIZE, DIVISION_YSIZE = 10, 10
+MINOR_DIVIDE_THICKNESS = 10
+MAJOR_DIVIDE_THICKNESS = 10
+GRID_PATTERN = (3,3)
+
+def init_directory_tree():
+    try:
+        os.makedirs("./projects/{}".format(PROJECT_NAME))
+    except:
+        pass
+    try:
+        os.makedirs("./projects/{}/images".format(PROJECT_NAME))
+    except:
+        pass
+    try:
+        os.makedirs("./projects/{}/directions".format(PROJECT_NAME))
+    except:
+        pass
+
+    region_dir = "./projects/{}/directions/region".format(PROJECT_NAME)
+    try:
+        os.makedirs(region_dir)
+    except:
+        pass
+
+    try:
+        create_region_directions_directories(region_dir)
+    except:
+        pass
+
+    block_dir = "./projects/{}/directions/block".format(PROJECT_NAME)
+    try:
+        os.makedirs(block_dir)
+    except:
+        pass
+    try:
+        create_block_pattern_directions_directories(block_dir)
+    except:
+        pass
+
+    #print("{} project directory already exists. Continuing.".format(PROJECT_NAME))
+
+def create_region_directions_directories(region_dir):
+    for region_num in range(GRID_PATTERN[0]*GRID_PATTERN[1]):
+        region = "REGION- {}".format(region_num + 1)
+        
+        for color in PALETTE.get_colors():
+            order = "{}. ".format(PALETTE.get_order(color) + 1).zfill(2)
+            folder_name = "{} {}".format(order, color)
+            folder_path = join(region_dir, region, folder_name)
+            try:
+                os.makedirs(folder_path)
+            except FileExistsError:
+                pass
+                #print("{} color directory already exists. Continuing.".format(folder_path))
+
+def create_block_pattern_directions_directories(block_dir):
+    """10x10 will have 42x24
+       20x20 will have 21x12"""
+    num_xblocks = IMAGE_XSIZE//BLOCK_XSIZE
+    num_yblocks = IMAGE_YSIZE//BLOCK_YSIZE
+    for yi in range(num_yblocks):
+        for xi in range(num_xblocks):
+            coord = "X-{}_Y-{}".format(xi+1, yi+1)
+            os.makedirs(join(block_dir, coord))
+
+def round_image():
+    try:
+        Image.open(ROUNDED_IMAGE_PATH)
+        return
+    except FileNotFoundError:
+        pass
+
+    input("Insert image into images folder named {}\nPress enter when done".format(
+        BASE_IMAGE_NAME))
+    try:
+        im = Image.open(BASE_IMAGE_PATH)
+    except FileNotFoundError:
+        print("File incorrectly named or not found. Try again.")
+        round_image()
+
+    xsize, ysize = IMAGE_XSIZE, IMAGE_YSIZE
+    im = im.resize((xsize, ysize))
+    pix = im.load()
+    im.save(RESIZED_IMAGE_PATH)
+
+    for yi in range(ysize):
+        print(ysize-yi)
+        for xi in range(xsize):
+            im_pix = pix[xi,yi]
+            new_pix = PALETTE.get_closest_pixel_value(im_pix)
+            pix[xi,yi] = new_pix
+
+    im.save(ROUNDED_IMAGE_PATH)
+
+def create_image_directions():
+    if DIRECTION_METHOD == "block":
+        create_block_directions()
+    elif DIRECTION_METHOD == "region":
+        create_region_directions()
+
+def create_block_directions():
+    #TODO: Experiment with different sized templates.
+    # Add functionality to automatically use the differently sized templates
+    
+    def calculate_direction_start_coord(xii, yii):
+        crossed_xdivides = (xii//2 + 1)
+        division_offsetx = crossed_xdivides* MINOR_DIVIDE_THICKNESS
+        if xii >= 10:
+            division_offsetx += MAJOR_DIVIDE_THICKNESS
+        
+        crossed_ydivides = (yii//2 + 1)
+        division_offsety = crossed_ydivides * MINOR_DIVIDE_THICKNESS
+        if yii >= 10:
+            division_offsety += MAJOR_DIVIDE_THICKNESS
+
+        start_dix = xii*DIRECTION_IM_PIXEL_THICKNESS + division_offsetx
+        start_diy = yii*DIRECTION_IM_PIXEL_THICKNESS + division_offsety
+        return start_dix, start_diy
+
+    im = Image.open(ROUNDED_IMAGE_PATH)
+    pix = im.load()
+    xsize, ysize = im.size
+
+    for xi in range(0, xsize, BLOCK_XSIZE):
+        for yi in range(0, ysize, BLOCK_YSIZE):
+            color_set = set()
+
+            #iterate over BLOCK_SIZE to determine needed colors to make directions out of
+            for yii in range(BLOCK_YSIZE): #20
+                for xii in range(BLOCK_XSIZE): #20
+                    imx, imy = xi+xii, yi+yii
+                    pixel = pix[imx, imy]
+                    color = PALETTE.color_lookup(pixel)
+                    color_set.add(color)
+            
+            #intialize set of direction ims
+            direction_im_dict = dict()
+            for color in color_set:
+                blank_direction_im = Image.open("./assets/images/20x20_template.png")
+                direction_im_dict[color] = {"im": blank_direction_im,
+                                            "pix": blank_direction_im.load()}
+
+            #draw on direction images
+            for yii in range(BLOCK_YSIZE):
+                for xii in range(BLOCK_XSIZE):
+                    dix_start, diy_start = calculate_direction_start_coord(xii, yii)
+                    imx, imy = xi+xii, yi+yii
+                    pixel = pix[imx, imy]
+                    color = PALETTE.color_lookup(pixel)
+
+                    for yiii in range(DIRECTION_IM_PIXEL_THICKNESS):
+                        for xiii in range(DIRECTION_IM_PIXEL_THICKNESS):
+                            direction_im_dict[color]["pix"][dix_start+xiii,
+                                                            diy_start+yiii] = FILL_COLOR
+            block_regionx = xi//BLOCK_XSIZE + 1
+            block_regiony = yi//BLOCK_YSIZE + 1
+            region = "X-{}_Y-{}".format(block_regionx, block_regiony)
+            print(region)
+            for color in direction_im_dict.keys():
+                save_fp = "{}/{}/{}-{}.png".format(BLOCK_PATTERN_DIRECTIONS_DIR,
+                        region, str(PALETTE.get_order(color)).zfill(2), color)
+                direction_im_dict[color]["im"].save(save_fp)
+
+def create_region_directions():
+    pass
+
+def main():
+    init_directory_tree()
+    round_image()
+    create_image_directions()
+
+main()
+
+
+SETTINGS = {
+        "PROJECT_NAME": "test",
+        "PROJECT_DIR": join("./projects", "asdf")
+        }
+
+
