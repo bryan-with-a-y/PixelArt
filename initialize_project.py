@@ -6,30 +6,33 @@ The main areas that need intialized:
     What color set to use
     
     Setting up the directions folder:
-        9 sections
-        in each section there is a folder of each color
-        in each color folder there:
-        only 10x10s with color?
+        set up regions folder
+        in each region folder there are sub_region folders
+        in each sub_region folder there are X by X squares of pixel instructions
 """
 
 """
 ***CONSIDERATIONS FOR NEXT PROJECT***
-2. Further subdivide graph papers to make viewing in filebrowser easier.
+1. Create a .py file that roudns and shows the image before initializing anything.
+2. Use the margins of the graph paper to write on isntead of utilzing the entire paper
+   for drawing
 3. When drawing on graph paper, write thicker lines, center numbers on 10x10 block
-4. Folder structure by region seems to work better than by color.
-7. Create code to generate instructions 100x100.
 8. Create code to generate instructions for AxB.
-9. Experiment with white as a color.
+9. When using white as a color, mark the drawing side with pencil for better visualization purposes.
 10. Reverse the image before rounding it so that when i draw it, the bleed through effect
     on the paper is the original image.
-11. Write code to be able to navigate an image by opening up all of the necessary directions.
-    Like, you type left and it shows you the left set of directions relative to the
-    currently being worked on AxB set.
 """
-#1, 2, 7, 14
-#1, 2, 4, 8
-###Need to add a top level folder for block size? Maybe not.
-###Mayhaps I could, isntead of 10x10 or 20x20, do a 20x40
+
+"""
+Project timeline/outline:
+    1. Select an image
+    2a. Test multiple sizes
+    2b. Select a size
+    3. Create direction images
+    4. Set up paper
+    5. Draw pixels
+    
+"""
 
 import os
 from posixpath import join
@@ -39,6 +42,7 @@ from PIL import Image
 from assets.objects.Palette import Palette
 import assets.constants as CONSTANTS
 
+#TODO make extended_sharpie_palette.txt
 palette_fp = "./assets/palettes/sharpie_palette.txt"
 PALETTE = Palette(palette_fp)
 
@@ -61,18 +65,18 @@ if INCLUDE_WHITE:
 
 #DIRECTION MAKER METHOD VARIABLES
 METHODS = ["region", "block"]
-DIRECTION_METHOD = "block"
+DIRECTION_METHOD = "region"
 BLOCK_XSIZE, BLOCK_YSIZE = 20,20
 FILL_COLOR = (255,255,255)
 
 #CONSTANT VARIABLES
 DIRECTION_IM_PIXEL_THICKNESS = 50
-IMAGE_XSIZE, IMAGE_YSIZE = 420, 240
-PAPER_XSIZE, PAPER_YSIZE = 140, 80
 DIVISION_XSIZE, DIVISION_YSIZE = 10, 10
 MINOR_DIVIDE_THICKNESS = 10
 MAJOR_DIVIDE_THICKNESS = 10
-GRID_PATTERN = (3,3)
+IMAGE_XSIZE, IMAGE_YSIZE = 420, 240 #This is actually going to change every project
+PAPER_XSIZE, PAPER_YSIZE = 140, 80 #going to change every project
+GRID_PATTERN = (3,3) #probably going to change every project
 
 def init_directory_tree():
     try:
