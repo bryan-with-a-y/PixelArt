@@ -43,7 +43,7 @@ from assets.objects.Palette import Palette
 import assets.constants as CONSTANTS
 
 #TODO make extended_sharpie_palette.txt
-palette_fp = "./assets/palettes/sharpie_palette.txt"
+palette_fp = "./assets/palettes/36_sharpie_palette.txt"
 PALETTE = Palette(palette_fp)
 
 #PROJECT LEVEL VARIABLES
@@ -57,26 +57,28 @@ REGION_DIRECTIONS_DIR = ""
 BLOCK_PATTERN_DIRECTIONS_DIR = "./projects/{}/directions/block/".format(PROJECT_NAME)
 
 #PALETTE LEVEL VARIABLES
-INCLUDE_WHITE = False
+INCLUDE_WHITE = True
 WHITE_COLOR_NAME = "WHITE"
 WHITE_COLOR_VALUE = (255,255,255)
 if INCLUDE_WHITE:
     PALETTE.add_color(WHITE_COLOR_NAME, WHITE_COLOR_VALUE)
 
 #DIRECTION MAKER METHOD VARIABLES
-METHODS = ["region", "block"]
-DIRECTION_METHOD = "region"
-BLOCK_XSIZE, BLOCK_YSIZE = 20,20
+METHODS = ["region", "block", "region_sub_region"]
+DIRECTION_METHOD = "region_sub_region"
+REGION_XSIZE, REGION_YSIZE = 40,24
 FILL_COLOR = (255,255,255)
 
 #CONSTANT VARIABLES
 DIRECTION_IM_PIXEL_THICKNESS = 50
-DIVISION_XSIZE, DIVISION_YSIZE = 10, 10
+DIVISION_XSIZE, DIVISION_YSIZE = 20, 12
 MINOR_DIVIDE_THICKNESS = 10
 MAJOR_DIVIDE_THICKNESS = 10
+
+#PAPER LEVEL VARIABLES
 IMAGE_XSIZE, IMAGE_YSIZE = 420, 240 #This is actually going to change every project
-PAPER_XSIZE, PAPER_YSIZE = 140, 80 #going to change every project
-GRID_PATTERN = (3,3) #probably going to change every project
+PAPER_XSIZE, PAPER_YSIZE = 40, 24 #going to change every project
+GRID_PATTERN = 8,8 #probably going to change every project
 
 def init_directory_tree():
     try:
@@ -116,13 +118,11 @@ def init_directory_tree():
     #print("{} project directory already exists. Continuing.".format(PROJECT_NAME))
 
 def create_region_directions_directories(region_dir):
-    for region_num in range(GRID_PATTERN[0]*GRID_PATTERN[1]):
-        region = "REGION- {}".format(region_num + 1)
-        
-        for color in PALETTE.get_colors():
-            order = "{}. ".format(PALETTE.get_order(color) + 1).zfill(2)
-            folder_name = "{} {}".format(order, color)
-            folder_path = join(region_dir, region, folder_name)
+    for region_yi in range(GRID_PATTERN[1]):
+        for region_xi in range(GRID_PATTERN[0]):
+
+            region = "REGION- {},{}".format(region_xi, region_yi)
+            folder_path = join(region_dir, region)
             try:
                 os.makedirs(folder_path)
             except FileExistsError:
@@ -169,12 +169,10 @@ def round_image():
     im.save(ROUNDED_IMAGE_PATH)
 
 def create_image_directions():
-    if DIRECTION_METHOD == "block":
-        create_block_directions()
-    elif DIRECTION_METHOD == "region":
-        create_region_directions()
+    if DIRECTION_METHOD == "region":
+        create_reqion_directions()
 
-def create_block_directions():
+def create_region_directions():
     #TODO: Experiment with different sized templates.
     # Add functionality to automatically use the differently sized templates
     
@@ -197,13 +195,13 @@ def create_block_directions():
     pix = im.load()
     xsize, ysize = im.size
 
-    for xi in range(0, xsize, BLOCK_XSIZE):
-        for yi in range(0, ysize, BLOCK_YSIZE):
+    for xi in range(0, xsize, REGION_XSIZE):
+        for yi in range(0, ysize, REGION_YSIZE):
             color_set = set()
 
-            #iterate over BLOCK_SIZE to determine needed colors to make directions out of
-            for yii in range(BLOCK_YSIZE): #20
-                for xii in range(BLOCK_XSIZE): #20
+            #iterate over REGION_SIZE to determine needed colors to make directions out of
+            for yii in range(REGION_YSIZE):
+                for xii in range(REGION_XSIZE):
                     imx, imy = xi+xii, yi+yii
                     pixel = pix[imx, imy]
                     color = PALETTE.color_lookup(pixel)
@@ -245,12 +243,8 @@ def main():
     round_image()
     create_image_directions()
 
+if sys.argv[1] == "test":
+    
 main()
-
-
-SETTINGS = {
-        "PROJECT_NAME": "test",
-        "PROJECT_DIR": join("./projects", "asdf")
-        }
 
 

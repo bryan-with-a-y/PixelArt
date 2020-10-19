@@ -1,0 +1,7 @@
+for each project, have something like a settings file so that
+I don't have to edit source code for each project. Could ideally
+have a template to work from.
+
+edit gitignore to ignore directions but include base images.
+
+
